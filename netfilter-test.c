@@ -80,10 +80,14 @@ static struct ret_struct print_pkt (struct nfq_data *tb)
 	fputc('\n', stdout);
 
 	// Check harmful website
+	printf("Recvlen: %d\n", ret);
+	printf("harmful_sitename: %s\n", harmful_sitename);
+	printf("site_len: %d\n", site_len);
 	for (int i = 0; i < ret - 6; i++) {
-		if (!strncmp(&(((struct http *)data)->data[i]), "Host: ", 6) && !strncmp(&(((struct http *)data)->data[i]), harmful_sitename, site_len)) {
+		if (!strncmp(&(((struct http *)data)->data[i]), "Host: ", 6) && !strncmp(&(((struct http *)data)->data[i+6]), harmful_sitename, site_len)) {
 			printf("harmful website detected - Blocked %s\n", harmful_sitename);
 			ret_val.blocked = 1;
+			puts("Drop IT");
 		}
 	}
 
@@ -150,10 +154,14 @@ int main(int argc, char **argv)
 		exit(1);
 	}	
 
+	fd = nfq_fd(h);
+
 	// alloc buffer for host name
 	site_len = strlen(argv[1]);
 	harmful_sitename = (char*)malloc(sizeof(char) * (site_len) + 1);
 	strncpy(harmful_sitename, argv[1], site_len);
+	puts(harmful_sitename);
+
 
 	for (;;) {
 		if ((rv = recv(fd, buf, sizeof(buf), 0)) >= 0) {
